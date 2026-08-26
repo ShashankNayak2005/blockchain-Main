@@ -1,0 +1,75 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         Role         @default(USER)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  ownedFiles   File[]       @relation("FileOwner")
+  accessGrants FileAccess[] @relation("GrantedToUser")
+  givenGrants  FileAccess[] @relation("GrantedByUser")
+
+  @@map("users")
+}
+
+model File {
+  id                 String       @id @default(uuid())
+  fileId             String       @unique
+  originalFileName   String
+  mimeType           String       @default("application/pdf")
+  fileSize           BigInt
+  ownerId            String
+  ipfsCid            String
+  sha256Hash         String
+  encryptedAesKey    String       @db.Text
+  iv                 String
+  authTag            String
+  keyIv              String
+  keyAuthTag         String
+  blockchainTxHash   String
+  blockchainRecordId String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  owner              User         @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  accessRules        FileAccess[]
+
+  @@index([ownerId])
+  @@index([fileId])
+  @@index([ipfsCid])
+  @@index([sha256Hash])
+  @@map("files")
+}
+
+model FileAccess {
+  id        String   @id @default(uuid())
+  fileId    String
+  userId    String
+  grantedBy String
+  createdAt DateTime @default(now())
+
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  user      User     @relation("GrantedToUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantor   User     @relation("GrantedByUser", fields: [grantedBy], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, userId])
+  @@index([fileId])
+  @@index([userId])
+  @@map("file_access")
+}

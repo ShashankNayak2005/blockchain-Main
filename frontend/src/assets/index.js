@@ -1,0 +1,2 @@
+// Assets Entry Point
+export {};

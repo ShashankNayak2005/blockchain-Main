@@ -1,0 +1,2 @@
+// Pages Entry Point
+export {};
