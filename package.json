@@ -9,6 +9,7 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "blockchain:node": "npm --prefix blockchain run node",
     "blockchain:deploy": "npm --prefix blockchain run deploy",
+    "blockchain:deploy:sepolia": "npm --prefix blockchain run deploy:sepolia",
     "test:backend": "npm --prefix backend test",
     "test:blockchain": "npm --prefix blockchain test"
   },

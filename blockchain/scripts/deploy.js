@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 async function main() {
-  console.log("⚡ Starting FileRegistry Smart Contract Deployment on Local Hardhat EVM...");
+  console.log(`⚡ Starting FileRegistry Smart Contract Deployment on ${hre.network.name}...`);
 
   const [deployer] = await hre.ethers.getSigners();
   console.log(`👤 Deploying contract with Account: ${deployer.address}`);

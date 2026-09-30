@@ -1,6 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -21,6 +22,11 @@ module.exports = {
     localhost: {
       url: process.env.HARDHAT_RPC_URL || "http://127.0.0.1:8545",
       chainId: 31337
+    },
+    sepolia: {
+      url: process.env.HARDHAT_RPC_URL || "",
+      accounts: process.env.BLOCKCHAIN_PRIVATE_KEY ? [process.env.BLOCKCHAIN_PRIVATE_KEY] : [],
+      chainId: 11155111
     }
   },
   paths: {

@@ -23,16 +23,21 @@ app.use(
 
 // 2. CORS Policy Hardening
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:5173",
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173"
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl/Jest requests)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin || allowedOrigins.includes(origin) || process.env.CLIENT_URL === "*") {
+        return callback(null, true);
+      }
+      // In production, if origin ends with vercel.app or netlify.app or matches CLIENT_URL
+      if (origin.endsWith(".vercel.app") || origin.endsWith(".netlify.app") || origin.endsWith(".onrender.com")) {
         return callback(null, true);
       }
       return callback(new Error("CORS policy error: Origin not allowed by CORS policy."));
