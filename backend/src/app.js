@@ -83,7 +83,20 @@ const authLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-// Health Check Endpoint
+// Root & Health Check Endpoints
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Secure File Sharing API Server is operational",
+    endpoints: {
+      health: "/health",
+      auth: "/api/auth",
+      files: "/api/files"
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -95,10 +108,12 @@ app.get("/health", (req, res) => {
 // Authentication Routes (Rate limited)
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/v1/auth", authLimiter, authRoutes);
+app.use("/auth", authLimiter, authRoutes);
 
 // File Operations Routes
 app.use("/api/files", fileRoutes);
 app.use("/api/v1/files", fileRoutes);
+app.use("/files", fileRoutes);
 
 // Global Error Handler Middleware
 app.use(errorHandler);
