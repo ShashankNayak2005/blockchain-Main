@@ -1,8 +1,8 @@
 {
   "contractName": "FileRegistry",
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  "network": "localhost",
-  "chainId": "31337",
-  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "deployedAt": "2026-08-27T05:52:50.746Z"
+  "address": "0x2Ac72c0435e2867F38DA308821f03c4d65154Cd4",
+  "network": "sepolia",
+  "chainId": "11155111",
+  "deployer": "0x588b0397a9263379d88de8c54BC6ae061c1af236",
+  "deployedAt": "2026-10-06T17:39:14.029Z"
 }

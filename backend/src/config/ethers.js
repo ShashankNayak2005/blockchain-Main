@@ -6,7 +6,11 @@ const fs = require("fs");
  * Initializes and exports Ethers.js provider, wallet, and contract instance configuration.
  */
 function getBlockchainConfig() {
-  const rpcUrl = process.env.BLOCKCHAIN_RPC_URL || process.env.HARDHAT_RPC_URL || "http://127.0.0.1:8545";
+  const rpcUrl =
+    process.env.BLOCKCHAIN_RPC_URL ||
+    process.env.SEPOLIA_RPC_URL ||
+    process.env.HARDHAT_RPC_URL ||
+    "http://127.0.0.1:8545";
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
   // Default pre-funded Hardhat Account #0 private key

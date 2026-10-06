@@ -1,3 +1,4 @@
+require("dotenv").config();
 const blockchainService = require("../src/services/blockchain/blockchain.service");
 const { getBlockchainConfig } = require("../src/config/ethers");
 const { ethers } = require("ethers");
@@ -9,8 +10,8 @@ describe("Blockchain Service Unit & Integration Tests", () => {
   const tamperedSha256Hash = "a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e";
 
   beforeAll(() => {
-    process.env.CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-    process.env.BLOCKCHAIN_RPC_URL = process.env.BLOCKCHAIN_RPC_URL || "http://127.0.0.1:8545";
+    process.env.CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "0x2Ac72c0435e2867F38DA308821f03c4d65154Cd4";
+    process.env.BLOCKCHAIN_RPC_URL = process.env.BLOCKCHAIN_RPC_URL || process.env.SEPOLIA_RPC_URL || "http://127.0.0.1:8545";
   });
 
   describe("1. Configuration & Input Validation", () => {
@@ -103,6 +104,6 @@ describe("Blockchain Service Unit & Integration Tests", () => {
       await expect(
         blockchainService.registerFileOnBlockchain(mockFileId, mockIpfsCid, mockSha256Hash)
       ).rejects.toThrow("Duplicate registration");
-    });
+    }, 30000);
   });
 });

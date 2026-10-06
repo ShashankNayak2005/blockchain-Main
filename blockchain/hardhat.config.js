@@ -20,11 +20,11 @@ module.exports = {
       chainId: 31337
     },
     localhost: {
-      url: process.env.HARDHAT_RPC_URL || "http://127.0.0.1:8545",
+      url: process.env.LOCAL_RPC_URL || process.env.HARDHAT_RPC_URL || "http://127.0.0.1:8545",
       chainId: 31337
     },
     sepolia: {
-      url: process.env.HARDHAT_RPC_URL || "",
+      url: process.env.SEPOLIA_RPC_URL || "",
       accounts: process.env.BLOCKCHAIN_PRIVATE_KEY ? [process.env.BLOCKCHAIN_PRIVATE_KEY] : [],
       chainId: 11155111
     }
