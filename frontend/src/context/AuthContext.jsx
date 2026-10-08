@@ -10,14 +10,27 @@ const ClerkAuthBridge = ({ children, setClerkAuthState }) => {
 
   useEffect(() => {
     if (!isLoaded) return;
-    setClerkAuthState({
-      isSignedIn: Boolean(isSignedIn),
-      clerkUser: clerkUser ? {
-        id: clerkUser.id,
-        name: clerkUser.fullName || clerkUser.firstName || clerkUser.username || "User",
-        email: clerkUser.primaryEmailAddress?.emailAddress || ""
-      } : null,
-      isLoaded: true
+    setClerkAuthState((prev) => {
+      const newIsSignedIn = Boolean(isSignedIn);
+      const newEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
+      const newName = clerkUser?.fullName || clerkUser?.firstName || clerkUser?.username || "User";
+      const newId = clerkUser?.id || null;
+
+      if (
+        prev.isLoaded === true &&
+        prev.isSignedIn === newIsSignedIn &&
+        prev.clerkUser?.id === newId &&
+        prev.clerkUser?.email === newEmail &&
+        prev.clerkUser?.name === newName
+      ) {
+        return prev;
+      }
+
+      return {
+        isSignedIn: newIsSignedIn,
+        clerkUser: clerkUser ? { id: newId, name: newName, email: newEmail } : null,
+        isLoaded: true
+      };
     });
   }, [
     isSignedIn,
