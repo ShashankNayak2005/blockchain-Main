@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { UserButton, useUser } from "@clerk/react";
 import { useAuth } from "../context/AuthContext";
 import {
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
 
 export const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { user: clerkUser } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,24 +92,11 @@ export const DashboardLayout = ({ children }) => {
             </div>
           </div>
 
-          {/* User Profile Card & Logout */}
+          {/* User Profile Card & Clerk UserButton */}
           <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-              </div>
-              <div className="truncate">
-                <p className="text-xs font-semibold text-slate-200 truncate">{user?.name}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
-              </div>
+              <UserButton showName appearance={{ elements: { userButtonBox: "flex-row-reverse text-slate-200" } }} />
             </div>
-            <button
-              onClick={handleLogout}
-              title="Logout"
-              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </aside>
