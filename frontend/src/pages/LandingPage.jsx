@@ -4,6 +4,8 @@ import { ShieldCheck, Lock, Database, Cpu, ArrowRight, CheckCircle2, Key, HardDr
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 import { useAuth } from "../context/AuthContext";
 
+const isClerkConfigured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+
 export const LandingPage = () => {
   const { isAuthenticated } = useAuth();
 
@@ -23,29 +25,61 @@ export const LandingPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors">
-                  Log In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2">
-                  <span>Get Started</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </SignUpButton>
-            </Show>
-            <Show when="signed-in">
-              <Link
-                to="/dashboard"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <UserButton />
-            </Show>
+            {isClerkConfigured ? (
+              <>
+                <Show when="signed-out">
+                  <SignInButton mode="modal">
+                    <button className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors">
+                      Log In
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2">
+                      <span>Get Started</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </SignUpButton>
+                </Show>
+                <Show when="signed-in">
+                  <Link
+                    to="/dashboard"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2"
+                  >
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <UserButton />
+                </Show>
+              </>
+            ) : (
+              <>
+                {isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2"
+                  >
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="px-4 py-2 text-slate-300 hover:text-slate-100 text-sm font-medium transition-colors"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 hover:brightness-110 transition-all flex items-center gap-2"
+                    >
+                      <span>Get Started</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -72,28 +106,48 @@ export const LandingPage = () => {
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <Show when="signed-out">
-              <SignUpButton mode="modal">
-                <button className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-transform flex items-center gap-2">
+            {isClerkConfigured ? (
+              <>
+                <Show when="signed-out">
+                  <SignUpButton mode="modal">
+                    <button className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-transform flex items-center gap-2">
+                      <span>Start Secure Transfer</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </SignUpButton>
+                  <SignInButton mode="modal">
+                    <button className="px-6 py-3.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 font-semibold text-base hover:bg-slate-800 transition-colors">
+                      System Login
+                    </button>
+                  </SignInButton>
+                </Show>
+                <Show when="signed-in">
+                  <Link
+                    to="/dashboard"
+                    className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-transform flex items-center gap-2"
+                  >
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </Show>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-transform flex items-center gap-2"
+                >
                   <span>Start Secure Transfer</span>
                   <ArrowRight className="w-5 h-5" />
-                </button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <button className="px-6 py-3.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 font-semibold text-base hover:bg-slate-800 transition-colors">
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-6 py-3.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 font-semibold text-base hover:bg-slate-800 transition-colors"
+                >
                   System Login
-                </button>
-              </SignInButton>
-            </Show>
-            <Show when="signed-in">
-              <Link
-                to="/dashboard"
-                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-transform flex items-center gap-2"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Show>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
