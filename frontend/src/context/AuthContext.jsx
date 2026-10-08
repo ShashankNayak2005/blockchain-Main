@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import authService from "../services/auth.service";
 import { useUser } from "@clerk/react";
 
@@ -9,6 +9,7 @@ const ClerkAuthBridge = ({ children, setClerkAuthState }) => {
   const { isSignedIn, user: clerkUser, isLoaded } = useUser();
 
   useEffect(() => {
+    if (!isLoaded) return;
     setClerkAuthState({
       isSignedIn: Boolean(isSignedIn),
       clerkUser: clerkUser ? {
@@ -16,9 +17,16 @@ const ClerkAuthBridge = ({ children, setClerkAuthState }) => {
         name: clerkUser.fullName || clerkUser.firstName || clerkUser.username || "User",
         email: clerkUser.primaryEmailAddress?.emailAddress || ""
       } : null,
-      isLoaded: Boolean(isLoaded)
+      isLoaded: true
     });
-  }, [isSignedIn, clerkUser, isLoaded, setClerkAuthState]);
+  }, [
+    isSignedIn,
+    clerkUser?.id,
+    clerkUser?.fullName,
+    clerkUser?.primaryEmailAddress?.emailAddress,
+    isLoaded,
+    setClerkAuthState
+  ]);
 
   return children;
 };
@@ -27,7 +35,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => authService.getStoredUser());
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
   const [loading, setLoading] = useState(true);
-  const [clerkAuth, setClerkAuth] = useState({ isSignedIn: false, clerkUser: null, isLoaded: true });
+  const [clerkAuth, setClerkAuth] = useState({
+    isSignedIn: false,
+    clerkUser: null,
+    isLoaded: !isClerkConfigured
+  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -73,9 +85,9 @@ export const AuthProvider = ({ children }) => {
 
   const effectiveUser = user || clerkAuth.clerkUser;
   const isAuthenticated = (!!token && !!user) || clerkAuth.isSignedIn;
-  const effectiveLoading = loading && (!isClerkConfigured || !clerkAuth.isLoaded);
+  const effectiveLoading = loading || (isClerkConfigured && !clerkAuth.isLoaded);
 
-  const contextValue = {
+  const contextValue = useMemo(() => ({
     user: effectiveUser,
     token,
     loading: effectiveLoading,
@@ -83,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout
-  };
+  }), [effectiveUser, token, effectiveLoading, isAuthenticated]);
 
   if (isClerkConfigured) {
     return (
