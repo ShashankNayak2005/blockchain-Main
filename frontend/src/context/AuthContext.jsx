@@ -5,54 +5,11 @@ import { useUser } from "@clerk/react";
 const AuthContext = createContext(null);
 const isClerkConfigured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
-const ClerkAuthBridge = ({ children, setClerkAuthState }) => {
-  const { isSignedIn, user: clerkUser, isLoaded } = useUser();
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    setClerkAuthState((prev) => {
-      const newIsSignedIn = Boolean(isSignedIn);
-      const newEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
-      const newName = clerkUser?.fullName || clerkUser?.firstName || clerkUser?.username || "User";
-      const newId = clerkUser?.id || null;
-
-      if (
-        prev.isLoaded === true &&
-        prev.isSignedIn === newIsSignedIn &&
-        prev.clerkUser?.id === newId &&
-        prev.clerkUser?.email === newEmail &&
-        prev.clerkUser?.name === newName
-      ) {
-        return prev;
-      }
-
-      return {
-        isSignedIn: newIsSignedIn,
-        clerkUser: clerkUser ? { id: newId, name: newName, email: newEmail } : null,
-        isLoaded: true
-      };
-    });
-  }, [
-    isSignedIn,
-    clerkUser?.id,
-    clerkUser?.fullName,
-    clerkUser?.primaryEmailAddress?.emailAddress,
-    isLoaded,
-    setClerkAuthState
-  ]);
-
-  return children;
-};
-
-export const AuthProvider = ({ children }) => {
+const ClerkAuthProvider = ({ children }) => {
+  const { isSignedIn: clerkSignedIn, user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const [user, setUser] = useState(() => authService.getStoredUser());
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
-  const [loading, setLoading] = useState(true);
-  const [clerkAuth, setClerkAuth] = useState({
-    isSignedIn: false,
-    clerkUser: null,
-    isLoaded: !isClerkConfigured
-  });
+  const [localLoading, setLocalLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -64,7 +21,85 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.warn("Token validation failed:", error.message || error);
-          logout();
+          authService.logout();
+          setToken(null);
+          setUser(null);
+        }
+      }
+      setLocalLoading(false);
+    };
+    checkAuth();
+  }, [token]);
+
+  const login = async (email, password) => {
+    const res = await authService.login(email, password);
+    if (res.success && res.data.token) {
+      setToken(res.data.token);
+      setUser(res.data.user);
+    }
+    return res;
+  };
+
+  const register = async (name, email, password) => {
+    const res = await authService.register(name, email, password);
+    if (res.success && res.data.token) {
+      setToken(res.data.token);
+      setUser(res.data.user);
+    }
+    return res;
+  };
+
+  const logout = () => {
+    authService.logout();
+    setToken(null);
+    setUser(null);
+  };
+
+  const effectiveClerkUser = clerkUser ? {
+    id: clerkUser.id,
+    name: clerkUser.fullName || clerkUser.firstName || clerkUser.username || "User",
+    email: clerkUser.primaryEmailAddress?.emailAddress || ""
+  } : null;
+
+  const effectiveUser = user || effectiveClerkUser;
+  const isAuthenticated = (!!token && !!user) || Boolean(clerkSignedIn);
+  const loading = !clerkLoaded || (Boolean(token) && localLoading);
+
+  const contextValue = useMemo(() => ({
+    user: effectiveUser,
+    token,
+    loading,
+    isAuthenticated,
+    login,
+    register,
+    logout
+  }), [effectiveUser, token, loading, isAuthenticated]);
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+const StandardAuthProvider = ({ children }) => {
+  const [user, setUser] = useState(() => authService.getStoredUser());
+  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (token) {
+        try {
+          const res = await authService.getCurrentUser();
+          if (res.success && res.data.user) {
+            setUser(res.data.user);
+          }
+        } catch (error) {
+          console.warn("Token validation failed:", error.message || error);
+          authService.logout();
+          setToken(null);
+          setUser(null);
         }
       }
       setLoading(false);
@@ -96,35 +131,28 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const effectiveUser = user || clerkAuth.clerkUser;
-  const isAuthenticated = (!!token && !!user) || clerkAuth.isSignedIn;
-  const effectiveLoading = loading || (isClerkConfigured && !clerkAuth.isLoaded);
-
   const contextValue = useMemo(() => ({
-    user: effectiveUser,
+    user,
     token,
-    loading: effectiveLoading,
-    isAuthenticated,
+    loading,
+    isAuthenticated: !!token && !!user,
     login,
     register,
     logout
-  }), [effectiveUser, token, effectiveLoading, isAuthenticated]);
-
-  if (isClerkConfigured) {
-    return (
-      <ClerkAuthBridge setClerkAuthState={setClerkAuth}>
-        <AuthContext.Provider value={contextValue}>
-          {children}
-        </AuthContext.Provider>
-      </ClerkAuthBridge>
-    );
-  }
+  }), [user, token, loading]);
 
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const AuthProvider = ({ children }) => {
+  if (isClerkConfigured) {
+    return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+  }
+  return <StandardAuthProvider>{children}</StandardAuthProvider>;
 };
 
 export const useAuth = () => {
