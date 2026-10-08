@@ -1,12 +1,33 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import authService from "../services/auth.service";
+import { useUser } from "@clerk/react";
 
 const AuthContext = createContext(null);
+const isClerkConfigured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+
+const ClerkAuthBridge = ({ children, setClerkAuthState }) => {
+  const { isSignedIn, user: clerkUser, isLoaded } = useUser();
+
+  useEffect(() => {
+    setClerkAuthState({
+      isSignedIn: Boolean(isSignedIn),
+      clerkUser: clerkUser ? {
+        id: clerkUser.id,
+        name: clerkUser.fullName || clerkUser.firstName || clerkUser.username || "User",
+        email: clerkUser.primaryEmailAddress?.emailAddress || ""
+      } : null,
+      isLoaded: Boolean(isLoaded)
+    });
+  }, [isSignedIn, clerkUser, isLoaded, setClerkAuthState]);
+
+  return children;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => authService.getStoredUser());
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
   const [loading, setLoading] = useState(true);
+  const [clerkAuth, setClerkAuth] = useState({ isSignedIn: false, clerkUser: null, isLoaded: true });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -50,18 +71,32 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const effectiveUser = user || clerkAuth.clerkUser;
+  const isAuthenticated = (!!token && !!user) || clerkAuth.isSignedIn;
+  const effectiveLoading = loading && (!isClerkConfigured || !clerkAuth.isLoaded);
+
+  const contextValue = {
+    user: effectiveUser,
+    token,
+    loading: effectiveLoading,
+    isAuthenticated,
+    login,
+    register,
+    logout
+  };
+
+  if (isClerkConfigured) {
+    return (
+      <ClerkAuthBridge setClerkAuthState={setClerkAuth}>
+        <AuthContext.Provider value={contextValue}>
+          {children}
+        </AuthContext.Provider>
+      </ClerkAuthBridge>
+    );
+  }
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        loading,
-        isAuthenticated: !!token && !!user,
-        login,
-        register,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
