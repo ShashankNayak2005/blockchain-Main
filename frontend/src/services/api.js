@@ -53,13 +53,6 @@ api.interceptors.response.use(
         customMessage = customMessage || "Session expired or unauthorized. Please log in again.";
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        if (
-          window.location.pathname !== "/login" &&
-          window.location.pathname !== "/register" &&
-          window.location.pathname !== "/"
-        ) {
-          window.location.href = "/login?expired=true";
-        }
         break;
 
       case 403:
