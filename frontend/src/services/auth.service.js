@@ -24,6 +24,17 @@ class AuthService {
   }
 
   /**
+   * Logs in or registers user via Google OAuth ID token.
+   */
+  async loginWithGoogle(credential) {
+    const response = await api.post("/auth/google", { token: credential });
+    if (response.data?.success && response.data?.data?.token) {
+      this.setSession(response.data.data.token, response.data.data.user);
+    }
+    return response.data;
+  }
+
+  /**
    * Retrieves current authenticated user profile from backend.
    */
   async getCurrentUser() {

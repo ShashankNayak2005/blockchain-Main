@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { ShieldCheck, Lock, Mail, User, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export const RegisterPage = () => {
   const [name, setName] = useState("");
@@ -10,7 +13,7 @@ export const RegisterPage = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { isAuthenticated, loading, register } = useAuth();
+  const { isAuthenticated, loading, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   if (loading) {
@@ -25,7 +28,6 @@ export const RegisterPage = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Password strength calculation
   const getPasswordStrength = (pass) => {
     let score = 0;
     if (pass.length >= 8) score += 1;
@@ -59,6 +61,23 @@ export const RegisterPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      if (!credentialResponse?.credential) {
+        throw new Error("No Google credential received.");
+      }
+      await loginWithGoogle(credentialResponse.credential);
+      navigate("/dashboard");
+    } catch (err) {
+      const errMsg = err.message || err.data?.error?.message || err.response?.data?.error?.message || "Google Authentication failed.";
+      setError(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -66,14 +85,14 @@ export const RegisterPage = () => {
       <div className="w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-cyan-950/40 relative z-10 backdrop-blur-xl">
         
         {/* Header */}
-        <div className="text-center mb-8 space-y-3">
+        <div className="text-center mb-6 space-y-3">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform">
               <ShieldCheck className="w-7 h-7 stroke-[2.5]" />
             </div>
           </Link>
           <h2 className="text-2xl font-extrabold tracking-tight">Create User Account</h2>
-          <p className="text-xs text-slate-400">Register identity for secure AES & Blockchain file sharing</p>
+          <p className="text-xs text-slate-400">Register with Google or Email for secure document sharing</p>
         </div>
 
         {/* Error Alert */}
@@ -83,6 +102,34 @@ export const RegisterPage = () => {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Google Signup Option */}
+        <div className="mb-6 space-y-3">
+          {GOOGLE_CLIENT_ID ? (
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google Sign-In was cancelled or failed.")}
+                theme="filled_black"
+                shape="pill"
+                size="large"
+                width="100%"
+                text="signup_with"
+              />
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-500/20 text-amber-400/90 text-xs text-center">
+              Google Auth active: Add <code className="text-cyan-300 font-mono">VITE_GOOGLE_CLIENT_ID</code> to your <code className="font-mono">.env</code> file.
+            </div>
+          )}
+
+          <div className="relative flex items-center justify-center my-4">
+            <div className="border-t border-slate-800 w-full" />
+            <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-mono uppercase tracking-wider absolute">
+              or register with email
+            </span>
+          </div>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -158,7 +205,7 @@ export const RegisterPage = () => {
               </>
             ) : (
               <>
-                <span>Register & Continue</span>
+                <span>Register Account</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

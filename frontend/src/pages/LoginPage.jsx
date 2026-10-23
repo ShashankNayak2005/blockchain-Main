@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -9,7 +12,7 @@ export const LoginPage = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { isAuthenticated, loading, login } = useAuth();
+  const { isAuthenticated, loading, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   if (loading) {
@@ -40,6 +43,23 @@ export const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      if (!credentialResponse?.credential) {
+        throw new Error("No Google credential received.");
+      }
+      await loginWithGoogle(credentialResponse.credential);
+      navigate("/dashboard");
+    } catch (err) {
+      const errMsg = err.message || err.data?.error?.message || err.response?.data?.error?.message || "Google Authentication failed.";
+      setError(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -47,14 +67,14 @@ export const LoginPage = () => {
       <div className="w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-cyan-950/40 relative z-10 backdrop-blur-xl">
         
         {/* Header */}
-        <div className="text-center mb-8 space-y-3">
+        <div className="text-center mb-6 space-y-3">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform">
               <ShieldCheck className="w-7 h-7 stroke-[2.5]" />
             </div>
           </Link>
           <h2 className="text-2xl font-extrabold tracking-tight">System Login</h2>
-          <p className="text-xs text-slate-400">Enter credentials to authenticate secure session</p>
+          <p className="text-xs text-slate-400">Authenticate session with Google or Email</p>
         </div>
 
         {/* Error Alert */}
@@ -65,8 +85,36 @@ export const LoginPage = () => {
           </div>
         )}
 
+        {/* Google Authentication Section */}
+        <div className="mb-6 space-y-3">
+          {GOOGLE_CLIENT_ID ? (
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google Sign-In was cancelled or failed.")}
+                theme="filled_black"
+                shape="pill"
+                size="large"
+                width="100%"
+                text="signin_with"
+              />
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-500/20 text-amber-400/90 text-xs text-center">
+              Google Auth active: Add <code className="text-cyan-300 font-mono">VITE_GOOGLE_CLIENT_ID</code> to your <code className="font-mono">.env</code> file.
+            </div>
+          )}
+
+          <div className="relative flex items-center justify-center my-4">
+            <div className="border-t border-slate-800 w-full" />
+            <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-mono uppercase tracking-wider absolute">
+              or continue with email
+            </span>
+          </div>
+        </div>
+
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-cyan-400" />
@@ -109,7 +157,7 @@ export const LoginPage = () => {
               </>
             ) : (
               <>
-                <span>Log In to Dashboard</span>
+                <span>Log In with Password</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -117,7 +165,7 @@ export const LoginPage = () => {
         </form>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-6">
+        <div className="mt-6 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-6">
           <span>Don't have an account? </span>
           <Link to="/register" className="text-cyan-400 font-semibold hover:underline">
             Register User

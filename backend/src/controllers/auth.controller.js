@@ -118,8 +118,82 @@ async function getProfile(req, res, next) {
   }
 }
 
+async function googleLogin(req, res, next) {
+  try {
+    const { token: idToken, googleToken } = req.body;
+    const tokenToVerify = idToken || googleToken;
+
+    if (!tokenToVerify) {
+      throw new UnauthorizedError("Google ID token is required");
+    }
+
+    const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+    const { OAuth2Client } = require("google-auth-library");
+    // Tolerate clock skew (e.g., system clock drift) up to 1 hour
+    OAuth2Client.CLOCK_SKEW_SECS_ = 3600;
+    const client = new OAuth2Client(googleClientId);
+
+    // If client ID is unconfigured or a placeholder, don't pass invalid audience to verifyIdToken
+    const isPlaceholder = !googleClientId || googleClientId.includes("your-google-client-id");
+    const requiredAudience = !isPlaceholder ? googleClientId : undefined;
+
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: tokenToVerify,
+        audience: requiredAudience
+      });
+      payload = ticket.getPayload();
+    } catch (error) {
+      console.error("Google token verification failed:", error.message);
+      throw new UnauthorizedError("Google authentication failed: " + error.message);
+    }
+
+    const { email, name } = payload;
+    if (!email) {
+      throw new UnauthorizedError("Google account does not provide an email address.");
+    }
+
+    // Find user by email or create new user
+    let user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      const crypto = require("crypto");
+      const randomPassword = crypto.randomBytes(32).toString("hex");
+      const passwordHash = await bcrypt.hash(randomPassword, BCRYPT_SALT_ROUNDS);
+
+      user = await prisma.user.create({
+        data: {
+          name: name || email.split("@")[0],
+          email,
+          passwordHash,
+          role: "USER"
+        }
+      });
+    }
+
+    const token = generateToken(user);
+    const sanitizedUser = sanitizeUser(user);
+
+    res.status(200).json({
+      success: true,
+      message: "Google authentication successful",
+      data: {
+        user: sanitizedUser,
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   register,
   login,
+  googleLogin,
   getProfile
 };
+
