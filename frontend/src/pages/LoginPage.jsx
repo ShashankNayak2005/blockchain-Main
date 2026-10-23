@@ -4,7 +4,9 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "344652884815-hm0a26h46md5ci83q0d3k7aa92m8mo35.apps.googleusercontent.com";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
